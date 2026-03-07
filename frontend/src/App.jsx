@@ -4,6 +4,9 @@ import { RoomProvider } from "./context/RoomContext";
 import HomePage from "./pages/HomePage";
 import RoomPage from "./pages/RoomPage";
 import ResultsPage from "./pages/ResultsPage";
+import CreateRoom from "./components/Room/CreateRoom";
+import JoinRoom from "./components/Room/JoinRoom";
+import MatchBrowser from "./components/Match/MatchBrowser";
 
 export default function App() {
   return (
@@ -11,9 +14,12 @@ export default function App() {
       <RoomProvider>
         <BrowserRouter>
           <Routes>
-            <Route path="/"                element={<HomePage />} />
-            <Route path="/room/:code"      element={<RoomPage />} />
-            <Route path="/results/:code"   element={<ResultsPage />} />
+            <Route path="/"                      element={<HomePage />} />
+            <Route path="/room/create"           element={<CreateRoom />} />
+            <Route path="/room/join"             element={<JoinRoom />} />
+            <Route path="/room/:code"            element={<RoomPage />} />
+            <Route path="/room/:code/match"      element={<MatchBrowser />} />
+            <Route path="/results/:code"         element={<ResultsPage />} />
           </Routes>
         </BrowserRouter>
       </RoomProvider>
