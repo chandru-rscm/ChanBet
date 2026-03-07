@@ -1,0 +1,27 @@
+Week 1 — Foundation
+  → Rename everything to ChanBet
+  → Landing page redesign
+  → Both mode selection on homepage
+
+Week 2 — Live Betting completion
+  → Betting panel with ₹
+  → Live score updates
+  → Auto bet resolution
+  → Leaderboard
+
+Week 3 — Auction system
+  → Team split
+  → Auction room with bidding
+  → Player stats integration
+
+Week 4 — Simulation engine
+  → Cricket ball by ball sim
+  → Football 90 min sim
+  → UFC round by round sim
+  → F1 lap by lap sim
+
+Week 5 — Fun layer
+  → Live commentary
+  → Reactions + chat
+  → Celebration animations
+  → Season leaderboard + rematch
