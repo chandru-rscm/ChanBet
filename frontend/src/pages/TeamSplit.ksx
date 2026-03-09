@@ -1,0 +1,159 @@
+import { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
+import { useSocket } from "../../hooks/useSocket";
+import API from "../../services/api";
+import socket from "../../services/socket";
+
+const BG = {
+  backgroundImage: "linear-gradient(#FFD70010 1px, transparent 1px), linear-gradient(90deg, #FFD70010 1px, transparent 1px)",
+  backgroundSize: "60px 60px"
+};
+
+export default function TeamSplit() {
+  const { code } = useParams();
+  const { user } = useAuth();
+  const [players, setPlayers] = useState([]);
+  const [teamA, setTeamA] = useState([]);
+  const [teamB, setTeamB] = useState([]);
+  const [room, setRoom] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetch = async () => {
+      const [roomRes, playersRes] = await Promise.all([
+        API.get(`/fantasy/${code}`),
+        API.get(`/fantasy/${code}/players`)
+      ]);
+      setRoom(roomRes.data.room);
+      setPlayers(playersRes.data.players);
+    };
+    fetch();
+    socket.emit("join_fantasy_room", { roomCode: code });
+  }, [code]);
+
+  useSocket("fantasy_room_updated", () => {
+    API.get(`/fantasy/${code}/players`).then(res => setPlayers(res.data.players));
+  });
+
+  // Redirect non-hosts
+  const isHost = room?.host_id === user?.id;
+
+  const toggleTeam = (userId, currentTeam) => {
+    if (currentTeam === "A") {
+      setTeamA(prev => prev.filter(id => id !== userId));
+      setTeamB(prev => [...prev, userId]);
+    } else if (currentTeam === "B") {
+      setTeamB(prev => prev.filter(id => id !== userId));
+    } else {
+      setTeamA(prev => [...prev, userId]);
+    }
+  };
+
+  const getTeam = (userId) => {
+    if (teamA.includes(userId)) return "A";
+    if (teamB.includes(userId)) return "B";
+    return null;
+  };
+
+  const handleRandomSplit = () => {
+    const shuffled = [...players].sort(() => Math.random() - 0.5);
+    const half = Math.ceil(shuffled.length / 2);
+    setTeamA(shuffled.slice(0, half).map(p => p.user_id));
+    setTeamB(shuffled.slice(half).map(p => p.user_id));
+  };
+
+  const handleConfirm = async () => {
+    if (teamA.length === 0 || teamB.length === 0) return alert("Both teams need at least 1 player!");
+    setLoading(true);
+    try {
+      await API.post(`/fantasy/${code}/teams`, { teamA, teamB });
+      navigate(`/fantasy/${code}/auction`);
+    } catch (err) {
+      alert("Failed to set teams!");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-black text-white p-6 relative" style={BG}>
+      <div className="relative z-10 max-w-lg mx-auto">
+
+        <div className="text-center mb-6 fade-in">
+          <p className="text-xs text-gray-600 tracking-widest mb-1" style={{ fontFamily: "monospace" }}>ROOM {code}</p>
+          <h1 className="text-4xl font-black" style={{ fontFamily: "'Bebas Neue', Impact, sans-serif", color: "#FFD700" }}>
+            SPLIT TEAMS
+          </h1>
+          <p className="text-xs text-gray-600 mt-1" style={{ fontFamily: "monospace" }}>
+            TAP PLAYERS TO ASSIGN TO TEAM A OR B
+          </p>
+        </div>
+
+        {/* Team Summary */}
+        <div className="grid grid-cols-2 gap-3 mb-6 fade-in-1">
+          <div className="p-3 rounded-xl text-center" style={{ background: "#1a0a0a", border: "1px solid #FF3B3B44" }}>
+            <p className="text-xs tracking-widest mb-1" style={{ fontFamily: "monospace", color: "#FF3B3B" }}>TEAM A</p>
+            <p className="text-3xl font-black" style={{ fontFamily: "'Bebas Neue', Impact, sans-serif", color: "#FF3B3B" }}>
+              {teamA.length}
+            </p>
+          </div>
+          <div className="p-3 rounded-xl text-center" style={{ background: "#0a0a1a", border: "1px solid #4488FF44" }}>
+            <p className="text-xs tracking-widest mb-1" style={{ fontFamily: "monospace", color: "#4488FF" }}>TEAM B</p>
+            <p className="text-3xl font-black" style={{ fontFamily: "'Bebas Neue', Impact, sans-serif", color: "#4488FF" }}>
+              {teamB.length}
+            </p>
+          </div>
+        </div>
+
+        {/* Players List */}
+        <div className="flex flex-col gap-2 mb-6 fade-in-2">
+          {players.map((p, i) => {
+            const team = getTeam(p.user_id);
+            return (
+              <button key={i} onClick={() => isHost && toggleTeam(p.user_id, team)}
+                className="flex items-center gap-3 px-4 py-3 rounded-xl transition text-left"
+                style={{
+                  background: team === "A" ? "#1a0a0a" : team === "B" ? "#0a0a1a" : "#111",
+                  border: team === "A" ? "1px solid #FF3B3B" : team === "B" ? "1px solid #4488FF" : "1px solid #222",
+                  cursor: isHost ? "pointer" : "default"
+                }}>
+                <span className="text-2xl">{p.users?.avatar || "🐯"}</span>
+                <span className="font-bold">{p.users?.name || "Player"}</span>
+                <span className="ml-auto text-sm font-black tracking-wider"
+                  style={{
+                    fontFamily: "monospace",
+                    color: team === "A" ? "#FF3B3B" : team === "B" ? "#4488FF" : "#333"
+                  }}>
+                  {team ? `TEAM ${team}` : "UNASSIGNED"}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        {isHost && (
+          <div className="flex flex-col gap-3">
+            <button onClick={handleRandomSplit}
+              className="w-full py-3 rounded-xl font-black tracking-widest transition"
+              style={{ fontFamily: "'Bebas Neue', Impact, sans-serif", background: "#111", border: "1px solid #FFD700", color: "#FFD700" }}>
+              🎲 RANDOM SPLIT
+            </button>
+            <button onClick={handleConfirm} disabled={loading}
+              className="w-full py-4 rounded-xl font-black text-xl tracking-widest transition disabled:opacity-40"
+              style={{ fontFamily: "'Bebas Neue', Impact, sans-serif", background: "linear-gradient(135deg, #FFD700, #FF8C00)", color: "black", boxShadow: "0 4px 20px #FFD70044" }}>
+              {loading ? "STARTING..." : "START AUCTION 🔨"}
+            </button>
+          </div>
+        )}
+
+        {!isHost && (
+          <p className="text-center text-xs live-pulse" style={{ fontFamily: "monospace", color: "#FFD700" }}>
+            ● WAITING FOR HOST TO SET TEAMS...
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
