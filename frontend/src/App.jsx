@@ -17,8 +17,9 @@ export default function App() {
             <Route path="/"                      element={<HomePage />} />
             <Route path="/room/create"           element={<CreateRoom />} />
             <Route path="/room/join"             element={<JoinRoom />} />
-            <Route path="/room/:code"            element={<RoomPage />} />
+            {/* ⚠️ More specific routes MUST come before /:code */}
             <Route path="/room/:code/match"      element={<MatchBrowser />} />
+            <Route path="/room/:code"            element={<RoomPage />} />
             <Route path="/results/:code"         element={<ResultsPage />} />
           </Routes>
         </BrowserRouter>

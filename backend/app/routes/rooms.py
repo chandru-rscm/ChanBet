@@ -38,3 +38,10 @@ def set_match(data: dict):
         "status": "live"
     }).eq("room_code", room_code).execute()
     return {"status": "ok"}
+
+@router.get("/{room_code}")
+def get_room(room_code: str):
+    result = supabase.table("rooms").select("*").eq("room_code", room_code).execute()
+    if not result.data:
+        raise HTTPException(status_code=404, detail="Room not found")
+    return {"status": "ok", "room": result.data[0]}

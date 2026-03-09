@@ -5,6 +5,11 @@ import { useRoom } from "../../context/RoomContext";
 import API from "../../services/api";
 import Login from "../Auth/Login";
 
+const BG = {
+  backgroundImage: "linear-gradient(#FFD70010 1px, transparent 1px), linear-gradient(90deg, #FFD70010 1px, transparent 1px)",
+  backgroundSize: "60px 60px"
+};
+
 export default function JoinRoom() {
   const { user } = useAuth();
   const { setRoom } = useRoom();
@@ -12,63 +17,53 @@ export default function JoinRoom() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  // If not logged in, show login first
   if (!user) return <Login redirectTo="/room/join" />;
 
   const handleJoin = async () => {
     if (!roomCode.trim()) return alert("Enter a room code!");
     setLoading(true);
     try {
-      const res = await API.post("/rooms/join", {
-        roomCode: roomCode.toUpperCase(),
-        userId: user.id,
-      });
+      const res = await API.post("/rooms/join", { roomCode: roomCode.toUpperCase(), userId: user.id });
       setRoom(res.data.room);
       navigate(`/room/${res.data.room.room_code}`);
     } catch (err) {
-      alert("Room not found! Check the code and try again.");
+      alert("Room not found! Check the code.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white flex flex-col items-center justify-center gap-8">
-      <h2 className="text-4xl font-bold text-yellow-400">🔑 Join a Room</h2>
-
-      {/* User info */}
-      <div className="bg-gray-800 px-6 py-4 rounded-2xl flex items-center gap-4">
-        <span className="text-4xl">{user.avatar}</span>
-        <div>
-          <p className="font-bold text-lg">{user.name}</p>
-          <p className="text-yellow-400 text-sm">🪙 {user.coins} coins</p>
+    <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center px-6 relative" style={BG}>
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-80 h-80 rounded-full opacity-10 pointer-events-none"
+        style={{ background: "radial-gradient(circle, #FFD700, transparent 70%)" }} />
+      <div className="relative z-10 w-full max-w-sm fade-in">
+        <div className="text-center mb-8">
+          <div style={{ fontFamily: "'Bebas Neue', Impact, sans-serif" }}>
+            <span className="text-5xl" style={{ color: "#FFD700" }}>CHAN</span>
+            <span className="text-5xl">BET</span>
+          </div>
+          <p className="text-xs text-gray-500 tracking-widest mt-1" style={{ fontFamily: "monospace" }}>JOIN A ROOM</p>
         </div>
+
+        <label className="text-xs text-gray-500 tracking-widest mb-3 block" style={{ fontFamily: "monospace" }}>ENTER ROOM CODE</label>
+        <input type="text" placeholder="ABC123" value={roomCode}
+          onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
+          onKeyDown={(e) => e.key === "Enter" && handleJoin()}
+          maxLength={6}
+          className="w-full bg-black border border-gray-800 focus:border-yellow-400 text-white px-4 py-4 rounded-xl outline-none transition text-center mb-8"
+          style={{ fontSize: "32px", fontFamily: "'Bebas Neue', Impact, sans-serif", letterSpacing: "12px" }} />
+
+        <button onClick={handleJoin} disabled={loading} className="w-full py-4 rounded-xl font-black text-xl tracking-widest mb-4 transition disabled:opacity-40"
+          style={{ fontFamily: "'Bebas Neue', Impact, sans-serif", background: "linear-gradient(135deg, #FFD700, #FF8C00)", color: "black", boxShadow: "0 4px 20px #FFD70044" }}>
+          {loading ? "JOINING..." : "JOIN ROOM 🏃"}
+        </button>
+
+        <button onClick={() => navigate("/")} className="w-full py-3 rounded-xl text-sm tracking-widest transition"
+          style={{ fontFamily: "monospace", color: "#555", border: "1px solid #222" }}>
+          ← BACK
+        </button>
       </div>
-
-      {/* Room Code Input */}
-      <input
-        type="text"
-        placeholder="Enter room code..."
-        value={roomCode}
-        onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
-        maxLength={6}
-        className="bg-gray-800 text-white px-6 py-4 rounded-xl text-2xl font-bold tracking-widest w-64 text-center outline-none border border-gray-600 focus:border-yellow-400"
-      />
-
-      <button
-        onClick={handleJoin}
-        disabled={loading}
-        className="bg-yellow-400 text-black px-10 py-4 rounded-2xl font-bold text-xl hover:bg-yellow-300 transition disabled:opacity-50"
-      >
-        {loading ? "Joining..." : "Join Room 🏃"}
-      </button>
-
-      <button
-        onClick={() => navigate("/")}
-        className="text-gray-500 hover:text-gray-300 transition"
-      >
-        ← Back
-      </button>
     </div>
   );
 }

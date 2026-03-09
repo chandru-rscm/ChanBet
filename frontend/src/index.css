@@ -1,3 +1,36 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@400;600;700;900&display=swap');
+
+:root {
+  --gold: #FFD700;
+  --gold-dark: #FF8C00;
+}
+
+body {
+  background-color: #000;
+  color: white;
+  font-family: 'Barlow', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: #000; }
+::-webkit-scrollbar-thumb { background: #FFD700; border-radius: 2px; }
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.fade-in { animation: fadeInUp 0.4s ease forwards; }
+.fade-in-1 { animation: fadeInUp 0.4s ease 0.1s forwards; opacity: 0; }
+.fade-in-2 { animation: fadeInUp 0.4s ease 0.2s forwards; opacity: 0; }
+.fade-in-3 { animation: fadeInUp 0.4s ease 0.3s forwards; opacity: 0; }
+
+@keyframes livePulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+.live-pulse { animation: livePulse 1.5s ease infinite; }
