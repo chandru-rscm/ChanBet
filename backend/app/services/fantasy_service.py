@@ -47,14 +47,8 @@ def get_auction_players(room_code: str):
     result = supabase.table("auction_players").select("*").eq("room_code", room_code).order("id").execute()
     return result.data
 
-def get_active_player(room_code: str):
-    result = supabase.table("auction_players").select("*").eq("room_code", room_code).eq("status", "active").execute()
-    return result.data[0] if result.data else None
-
 def set_active_player(room_code: str, player_id: int):
-    # Reset previous active to pending
     supabase.table("auction_players").update({"status": "pending"}).eq("room_code", room_code).eq("status", "active").execute()
-    # Set new active
     supabase.table("auction_players").update({"status": "active"}).eq("id", player_id).execute()
     return True
 
@@ -68,12 +62,17 @@ def get_highest_bid(player_id: int):
     return result.data[0] if result.data else None
 
 def sell_player(player_id: int, team: str, amount: int, room_code: str):
-    supabase.table("auction_players").update({"status": "sold", "sold_to": team, "sold_price": amount}).eq("id", player_id).execute()
-    # Add to squad
+    supabase.table("auction_players").update({
+        "status": "sold", "sold_to": team, "sold_price": amount
+    }).eq("id", player_id).execute()
     player = supabase.table("auction_players").select("*").eq("id", player_id).execute().data[0]
     supabase.table("fantasy_squads").insert({
-        "room_code": room_code, "team": team, "player_id": player_id,
-        "player_name": player["player_name"], "role": player["role"], "bought_for": amount
+        "room_code": room_code,
+        "team": team,
+        "player_id": player_id,
+        "player_name": player["player_name"],
+        "role": player["role"],
+        "bought_for": amount
     }).execute()
     return True
 
@@ -85,5 +84,6 @@ def get_squad(room_code: str, team: str):
     return result.data
 
 def get_team_budget_spent(room_code: str, team: str):
-    squad = get_squad(room_code, team)
-    return sum(p["bought_for"] or 0 for p in squad)
+    # Fix: get actual squad from fantasy_squads, not auction_players
+    squad = supabase.table("fantasy_squads").select("bought_for").eq("room_code", room_code).eq("team", team).execute()
+    return sum(p["bought_for"] or 0 for p in squad.data)

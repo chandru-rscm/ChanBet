@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
-import API from "../../services/api";
-import Login from "../Auth/Login";
+import { useAuth } from "../context/AuthContext";
+import API from "../services/api";
+import Login from "../components/Auth/Login";
 
 const SPORTS = [
   { key: "cricket",    label: "CRICKET",    emoji: "🏏", desc: "IPL Auction • 11 players • ₹120Cr budget" },

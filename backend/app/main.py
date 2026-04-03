@@ -9,7 +9,10 @@ app = FastAPI(title="ChanBet API 🏆")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=[
+    "http://localhost:5173",
+    "http://10.67.76.161:5173",
+    "https://shalanda-hyperneurotic-kory.ngrok-free.dev"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
