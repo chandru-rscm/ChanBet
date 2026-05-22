@@ -20,6 +20,7 @@ const BG = {
 export default function FantasyCreate() {
   const { user } = useAuth();
   const [sport, setSport] = useState(null);
+  const [gameMode, setGameMode] = useState("dual_franchise");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -29,7 +30,7 @@ export default function FantasyCreate() {
     if (!sport) return alert("Pick a sport first!");
     setLoading(true);
     try {
-      const res = await API.post("/fantasy/create", { hostId: user.id, sport });
+      const res = await API.post("/fantasy/create", { hostId: user.id, sport, gameMode });
       navigate(`/fantasy/${res.data.room.room_code}/teams`);
     } catch (err) {
       alert("Failed to create room!");
@@ -62,7 +63,7 @@ export default function FantasyCreate() {
         <p className="text-xs text-gray-600 tracking-widest mb-3" style={{ fontFamily: "monospace" }}>
           PICK YOUR SPORT
         </p>
-        <div className="flex flex-col gap-3 mb-8 fade-in-1">
+        <div className="flex flex-col gap-3 mb-6 fade-in-1">
           {SPORTS.map((s) => (
             <button key={s.key} onClick={() => setSport(s.key)}
               className="flex items-center gap-4 p-4 rounded-2xl text-left transition"
@@ -83,6 +84,54 @@ export default function FantasyCreate() {
               )}
             </button>
           ))}
+        </div>
+
+        {/* Game Mode Picker */}
+        <p className="text-xs text-gray-600 tracking-widest mb-3" style={{ fontFamily: "monospace" }}>
+          PICK GAME MODE
+        </p>
+        <div className="flex flex-col gap-3 mb-8 fade-in-1">
+          <button onClick={() => setGameMode("dual_franchise")}
+            className="flex items-start gap-4 p-4 rounded-2xl text-left transition"
+            style={{
+              background: gameMode === "dual_franchise" ? "#1a1500" : "#111",
+              border: gameMode === "dual_franchise" ? "1px solid #FFD700" : "1px solid #222",
+              transform: gameMode === "dual_franchise" ? "scale(1.02)" : "scale(1)"
+            }}>
+            <span className="text-4xl">⚔️</span>
+            <div>
+              <p className="font-black tracking-wider text-lg" style={{ fontFamily: "'Bebas Neue', Impact, sans-serif", color: gameMode === "dual_franchise" ? "#FFD700" : "white" }}>
+                DUAL FRANCHISE (2 TEAMS)
+              </p>
+              <p className="text-xs text-gray-600" style={{ fontFamily: "monospace" }}>
+                Lobby splits in half to manage two custom franchises competing in a single synced head-to-head match.
+              </p>
+            </div>
+            {gameMode === "dual_franchise" && (
+              <span className="ml-auto text-xl self-center">✅</span>
+            )}
+          </button>
+
+          <button onClick={() => setGameMode("multiplayer_league")}
+            className="flex items-start gap-4 p-4 rounded-2xl text-left transition"
+            style={{
+              background: gameMode === "multiplayer_league" ? "#1a1500" : "#111",
+              border: gameMode === "multiplayer_league" ? "1px solid #FFD700" : "1px solid #222",
+              transform: gameMode === "multiplayer_league" ? "scale(1.02)" : "scale(1)"
+            }}>
+            <span className="text-4xl">🏆</span>
+            <div>
+              <p className="font-black tracking-wider text-lg" style={{ fontFamily: "'Bebas Neue', Impact, sans-serif", color: gameMode === "multiplayer_league" ? "#FFD700" : "white" }}>
+                MULTIPLAYER LEAGUE (N TEAMS)
+              </p>
+              <p className="text-xs text-gray-600" style={{ fontFamily: "monospace" }}>
+                Every player chooses their own IPL franchise, drafts players in a multi-way live auction, and simulates a full season!
+              </p>
+            </div>
+            {gameMode === "multiplayer_league" && (
+              <span className="ml-auto text-xl self-center">✅</span>
+            )}
+          </button>
         </div>
 
         <button onClick={handleCreate} disabled={loading || !sport}

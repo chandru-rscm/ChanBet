@@ -14,7 +14,8 @@ router = APIRouter()
 
 @router.post("/create")
 def create(data: dict):
-    room = create_fantasy_room(data["hostId"], data["sport"])
+    game_mode = data.get("gameMode", "dual_franchise")
+    room = create_fantasy_room(data["hostId"], data["sport"], game_mode)
     seed_players(room["room_code"], data["sport"])
     return {"status": "ok", "room": room}
 
@@ -39,13 +40,46 @@ def players(room_code: str):
 @router.post("/{room_code}/teams")
 async def set_teams(room_code: str, data: dict):
     assign_teams(room_code, data["teamA"], data["teamB"])
-    await sio.emit("teams_set", {}, room=room_code)
+    team_a_name = data.get("teamAName", "Team A")
+    team_b_name = data.get("teamBName", "Team B")
+    supabase.table("fantasy_rooms").update({
+        "team_a_name": team_a_name,
+        "team_b_name": team_b_name
+    }).eq("room_code", room_code).execute()
+    await sio.emit("teams_set", {"teamAName": team_a_name, "teamBName": team_b_name}, room=room_code)
     return {"status": "ok"}
 
 @router.post("/{room_code}/pick-team")
 async def pick_team(room_code: str, data: dict):
     supabase.table("fantasy_room_players").update({"team": data["team"]}).eq("room_code", room_code).eq("user_id", data["userId"]).execute()
     await sio.emit("fantasy_room_updated", {}, room=room_code)
+    return {"status": "ok"}
+
+@router.post("/{room_code}/pick-franchise")
+async def pick_franchise(room_code: str, data: dict):
+    user_id = data["userId"]
+    franchise = data["franchise"]
+    
+    # Check if already taken by someone else in the same room
+    players_res = supabase.table("fantasy_room_players").select("*").eq("room_code", room_code).execute()
+    for p in players_res.data:
+        if p.get("selected_team") == franchise and p.get("user_id") != user_id:
+            raise HTTPException(status_code=400, detail=f"Franchise {franchise} is already claimed!")
+            
+    # Update both team and selected_team to the franchise name for compatibility
+    supabase.table("fantasy_room_players").update({
+        "team": franchise,
+        "selected_team": franchise
+    }).eq("room_code", room_code).eq("user_id", user_id).execute()
+    
+    await sio.emit("franchise_claimed", {"userId": user_id, "franchise": franchise}, room=room_code)
+    await sio.emit("fantasy_room_updated", {}, room=room_code)
+    return {"status": "ok"}
+
+@router.post("/{room_code}/start-league-auction")
+async def start_league_auction(room_code: str):
+    supabase.table("fantasy_rooms").update({"status": "auction"}).eq("room_code", room_code).execute()
+    await sio.emit("teams_set", {}, room=room_code)
     return {"status": "ok"}
 
 @router.get("/{room_code}/auction/players")

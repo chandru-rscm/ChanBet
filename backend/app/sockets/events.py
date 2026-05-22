@@ -48,3 +48,23 @@ async def fantasy_bid(sid, data):
 async def auction_timer_start(sid, data):
     room_code = data.get("roomCode")
     await sio.emit("timer_started", data, room=room_code)
+
+@sio.event
+async def sim_start(sid, data):
+    room_code = data.get("roomCode")
+    await sio.emit("sim_started", data, room=room_code)
+
+@sio.event
+async def sim_ball(sid, data):
+    room_code = data.get("roomCode")
+    await sio.emit("sim_ball_played", data, room=room_code)
+
+@sio.event
+async def sim_match_end(sid, data):
+    room_code = data.get("roomCode")
+    await sio.emit("sim_match_result", data, room=room_code)
+
+@sio.event
+async def sim_status_change(sid, data):
+    room_code = data.get("roomCode")
+    await sio.emit("sim_status_changed", data, room=room_code)

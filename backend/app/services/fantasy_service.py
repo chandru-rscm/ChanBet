@@ -7,9 +7,15 @@ def generate_room_code():
 
 # ─── ROOMS ───────────────────────────────────────
 
-def create_fantasy_room(host_id: str, sport: str):
+def create_fantasy_room(host_id: str, sport: str, game_mode: str = "dual_franchise"):
     code = generate_room_code()
-    room = {"room_code": code, "host_id": host_id, "sport": sport, "status": "waiting"}
+    room = {
+        "room_code": code,
+        "host_id": host_id,
+        "sport": sport,
+        "status": "waiting",
+        "game_mode": game_mode
+    }
     result = supabase.table("fantasy_rooms").insert(room).execute()
     supabase.table("fantasy_room_players").insert({"room_code": code, "user_id": host_id}).execute()
     return result.data[0]
@@ -80,8 +86,13 @@ def mark_unsold(player_id: int):
     supabase.table("auction_players").update({"status": "unsold"}).eq("id", player_id).execute()
 
 def get_squad(room_code: str, team: str):
-    result = supabase.table("fantasy_squads").select("*").eq("room_code", room_code).eq("team", team).execute()
-    return result.data
+    result = supabase.table("fantasy_squads").select("*, player_info:auction_players(stats)").eq("room_code", room_code).eq("team", team).execute()
+    squad_list = []
+    for item in result.data:
+        p_info = item.pop("player_info", None)
+        item["stats"] = p_info.get("stats", {}) if p_info else {}
+        squad_list.append(item)
+    return squad_list
 
 def get_team_budget_spent(room_code: str, team: str):
     # Fix: get actual squad from fantasy_squads, not auction_players
